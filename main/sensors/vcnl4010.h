@@ -64,3 +64,7 @@ esp_err_t vcnl4010_init(void);
 void vcnl4010_readProximityResult(uint16_t *proximityResult);
 
 void vcnl4010_readAmbientLight(uint16_t *ambientResult);
+
+void vcnl4010_readInterruptStatus(uint8_t *interruptStatus);
+
+void vcnl4010_writeInterruptStatus(uint8_t interruptStatus);
