@@ -5,8 +5,6 @@
 static const char *TAG = "DS1307";
 
 /**
-
-/**
  * @brief Read a sequence of bytes from a ds1307_ sensor registers
  */
 static esp_err_t ds1307_register_read(uint8_t reg_addr, uint8_t *data, size_t len)
@@ -28,5 +26,6 @@ static esp_err_t ds1307__register_write_byte(uint8_t reg_addr, uint8_t data)
 }
 
 esp_err_t ds1307_init() {
+  ESP_LOGI(TAG, "Initializing DS1307..");
   return ESP_OK;
 }
