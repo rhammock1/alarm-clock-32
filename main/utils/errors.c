@@ -27,6 +27,6 @@ void error_blink_task(void)
 
 void blink_led_once(void) {
   gpio_set_level(ERROR_LED, 1);
-  vTaskDelay(1000 / portTICK_PERIOD_MS);
+  vTaskDelay(100 / portTICK_PERIOD_MS);
   gpio_set_level(ERROR_LED, 0);
 }
