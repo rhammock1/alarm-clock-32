@@ -119,10 +119,17 @@ void init_i2c_sensors(void)
   //
   if (ret != ESP_OK)
   {
-    ESP_LOGE(TAG, "Error initializing vcnl4010: %d", ret);
+    ESP_LOGE(TAG, "Error initializing VCNL4010: %d", ret);
     error_blink_task();
   }
   ESP_LOGI(TAG, "VCNL4010 initialized successfully");
+
+  ret = ds1307_init();
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "Error initializing DS1307: %d", ret);
+    error_blink_task();
+  }
+  ESP_LOGI(TAG, "DS1307 initialized successfully");
 }
 
 
@@ -142,10 +149,4 @@ void app_main(void)
     ESP_LOGI(TAG, "Waiting for interrupt");
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
-
-  // ret = ds1307_init();
-  // if (ret != ESP_OK) {
-  //   ESP_LOGE(TAG, "Error initializing ds1307: %d", ret);
-  //   error_blink_task();
-  // }
 }
