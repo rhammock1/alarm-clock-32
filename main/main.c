@@ -30,10 +30,10 @@ void interrupt_23_handler(void *arg)
     {
       ESP_LOGI(TAG, "Proximity interrupt triggered");
       blink_led_once();
+      // Must write ones in each bit to clear the interrupt
+      vcnl4010_writeInterruptStatus(0x01);
     }
     
-    // Must write ones in each bit to clear the interrupt
-    vcnl4010_writeInterruptStatus(0x01);
 
     ESP_LOGI(TAG, "Interrupt status: %d", interrupt_status);
   }
@@ -145,8 +145,15 @@ void app_main(void)
   init_i2c_sensors();
   configure_interrupts();
 
+  struct tm timeinfo;
   while(1) {
     ESP_LOGI(TAG, "Waiting for interrupt");
+
+    ds1307_read_time(&timeinfo);
+    ESP_LOGI(TAG, "Time read from DS1307: %d-%d-%d %d:%d:%d",
+      timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday,
+      timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
