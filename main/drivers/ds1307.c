@@ -41,12 +41,6 @@ esp_err_t ds1307_set_time(struct tm *timeinfo) {
   // Set AM/PM depending on the hour
   timeinfo->tm_hour |= (timeinfo->tm_hour < 12) ? 0x00 : 0x20;
 
-  // print the write buf to the console
-  for (int i = 0; i < sizeof(write_buf); i++)
-  {
-    ESP_LOGI(TAG, "Write buf[%d]: %d", i, write_buf[i]);
-  }
-
   esp_err_t ret = i2c_master_write_to_device(I2C_MASTER_NUM, DS1307_SENSOR_ADDR, write_buf, sizeof(write_buf), I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error setting time: %d", ret);
@@ -100,11 +94,6 @@ esp_err_t ds1307_init() {
 
   ESP_LOGI(TAG, "This program was compiled on %s at %s\n", __DATE__, __TIME__);
   sscanf(__TIME__, "%d:%d:%d", &timeinfo.tm_hour, &timeinfo.tm_min, &timeinfo.tm_sec);
-
-  // PRint the time
-  ESP_LOGI(TAG, "Time BEFORE INIT: %d-%d-%d %d:%d:%d",
-    timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday,
-    timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
 
   // Set the time
   if(true) {
