@@ -70,11 +70,68 @@ void tm1637_set_brightness(uint8_t brightness) {
   tm1637_stop();
 }
 
-void tm1637_update_time(uint8_t hours, uint8_t minutes) {
+static const int8_t tm1637_symbols[] = {
+    // XGFEDCBA
+    0x3f, // 0b00111111,    // 0
+    0x06, // 0b00000110,    // 1
+    0x5b, // 0b01011011,    // 2
+    0x4f, // 0b01001111,    // 3
+    0x66, // 0b01100110,    // 4
+    0x6d, // 0b01101101,    // 5
+    0x7d, // 0b01111101,    // 6
+    0x07, // 0b00000111,    // 7
+    0x7f, // 0b01111111,    // 8
+    0x6f, // 0b01101111,    // 9
+};
+
+void tm1637_set_segment_raw(const uint8_t segment_idx, const uint8_t data)
+{
+  tm1637_start();
+  tm1637_write_byte(TM1637_ADDR_FIXED);
+  tm1637_stop();
+  tm1637_start();
+  tm1637_write_byte(segment_idx | 0xc0); // selects the segment to write to
+  tm1637_write_byte(data);
+  tm1637_stop();
+
+  tm1637_set_brightness(1);
+}
+
+void tm1637_set_segment_number(const uint8_t segment_idx, const uint8_t num)
+{
+  uint8_t seg_data = 0x00;
+
+  if (num < (sizeof(tm1637_symbols) / sizeof(tm1637_symbols[0])))
+  {
+    seg_data = tm1637_symbols[num]; // Select proper segment image
+  }
+
+  if(segment_idx == 1)
+  {
+    seg_data |= 0x80; // Set the decimal point (colon)
+  }
+
+  tm1637_set_segment_raw(segment_idx, seg_data);
+}
+
+void tm1637_update_time(uint8_t hours, uint8_t minutes){
   // Write hours and minutes to the display
   tm1637_start();
-  tm1637_write_byte(hours);
-  tm1637_write_byte(minutes);
+  if(hours < 10) {
+    tm1637_set_segment_number(0, 0);
+    tm1637_set_segment_number(1, hours);
+  } else {
+    tm1637_set_segment_number(0, hours / 10);
+    tm1637_set_segment_number(1, hours % 10);
+  }
+
+  if(minutes < 10) {
+    tm1637_set_segment_number(2, 0);
+    tm1637_set_segment_number(3, minutes);
+  } else {
+    tm1637_set_segment_number(2, minutes / 10);
+    tm1637_set_segment_number(3, minutes % 10);
+  }
   tm1637_stop();
 }
 
@@ -92,19 +149,14 @@ void tm1637_init() {
   tm1637_write_byte(0xC0);
   ESP_LOGI(TAG, "Set the first address");
   for (uint8_t i = 0; i < 6; i++) {
-    tm1637_write_byte(0xFF);
+    // Clear the display
+    tm1637_write_byte(0x00);
   }
   tm1637_stop();
 
-  tm1637_start();
-  tm1637_write_byte(0x8F);
-  tm1637_stop();
 
-  // // Set the brightness to 7
-  // tm1637_set_brightness(7);
-
-  // // Update the time to 00:00
-  // tm1637_update_time(0, 0);
+  // Set the brightness to 7
+  tm1637_set_brightness(1);
 
   ESP_LOGI(TAG, "TM1637 initialized successfully");
 }
