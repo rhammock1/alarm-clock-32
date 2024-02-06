@@ -36,11 +36,6 @@ esp_err_t ds1307_set_time(struct tm *timeinfo) {
     dec_to_bcd(timeinfo->tm_year - 2000) // Year
   };
 
-  // Set 12 hour mode
-  timeinfo->tm_hour |= 0x40;
-  // Set AM/PM depending on the hour
-  timeinfo->tm_hour |= (timeinfo->tm_hour < 12) ? 0x00 : 0x20;
-
   esp_err_t ret = i2c_master_write_to_device(I2C_MASTER_NUM, DS1307_SENSOR_ADDR, write_buf, sizeof(write_buf), I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error setting time: %d", ret);
@@ -96,7 +91,7 @@ esp_err_t ds1307_init() {
   sscanf(__TIME__, "%d:%d:%d", &timeinfo.tm_hour, &timeinfo.tm_min, &timeinfo.tm_sec);
 
   // Set the time
-  if(true) {
+  if(false) {
     esp_err_t ret = ds1307_set_time(&timeinfo);
     if (ret != ESP_OK) {
       ESP_LOGE(TAG, "Error setting time: %d", ret);

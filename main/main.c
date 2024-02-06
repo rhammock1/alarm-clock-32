@@ -161,6 +161,11 @@ void app_main(void)
       timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday,
       timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
 
+    bool pm = timeinfo.tm_hour > 12;
+    // Convert hour to 12 hour format
+    if (pm) {
+      timeinfo.tm_hour -= 12;
+    }
     tm1637_update_time(timeinfo.tm_hour, timeinfo.tm_min);
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
