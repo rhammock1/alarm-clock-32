@@ -2,8 +2,9 @@
 #include "esp_log.h"
 #include "utils/i2c.h"
 #include "utils/errors.h"
-#include "sensors/ds1307.h"
-#include "sensors/vcnl4010.h"
+#include "drivers/ds1307.h"
+#include "drivers/vcnl4010.h"
+#include "drivers/tm1637.h"
 
 static const char *TAG = "ALARM-CLOCK";
 
@@ -132,6 +133,11 @@ void init_i2c_sensors(void)
   ESP_LOGI(TAG, "DS1307 initialized successfully");
 }
 
+void init_other_drivers() {
+  ESP_LOGI(TAG, "Initializing other drivers..");
+  tm1637_init();
+  ESP_LOGI(TAG, "TM1637 initialized successfully");
+}
 
 void app_main(void)
 {
@@ -143,6 +149,7 @@ void app_main(void)
 
   configure_error_led();
   init_i2c_sensors();
+  init_other_drivers();
   configure_interrupts();
 
   struct tm timeinfo;
