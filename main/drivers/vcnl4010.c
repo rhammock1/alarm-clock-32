@@ -1,6 +1,6 @@
 #include "esp_log.h"
 #include "vcnl4010.h"
-#include "utils/errors.h"
+#include "errors.h"
 
 static const char *TAG = "VCNL4010";
 

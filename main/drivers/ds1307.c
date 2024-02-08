@@ -2,7 +2,7 @@
 #include <string.h>
 #include "esp_log.h"
 #include "ds1307.h"
-#include "utils/errors.h"
+#include "errors.h"
 
 static const char *TAG = "DS1307";
 

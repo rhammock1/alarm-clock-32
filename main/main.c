@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include "esp_log.h"
-#include "utils/i2c_config.h"
-#include "utils/errors.h"
-#include "drivers/ds1307.h"
-#include "drivers/vcnl4010.h"
-#include "drivers/tm1637.h"
+#include "i2c_config.h"
+#include "errors.h"
+#include "ds1307.h"
+#include "vcnl4010.h"
+#include "tm1637.h"
+#include "http_server.h"
 
 static const char *TAG = "ALARM-CLOCK";
 

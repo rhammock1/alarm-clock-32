@@ -2,7 +2,7 @@
 #include "driver/gpio.h"
 #include "rom/ets_sys.h"
 #include "tm1637.h"
-#include "utils/errors.h"
+#include "errors.h"
 
 static const char *TAG = "TM1637";
 
