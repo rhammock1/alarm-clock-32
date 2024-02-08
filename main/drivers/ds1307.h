@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "utils/i2c.h"
+#include "utils/i2c_config.h"
 #include <time.h>
 
 #define DS1307_SENSOR_ADDR 0x68

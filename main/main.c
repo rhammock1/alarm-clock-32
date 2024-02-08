@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "esp_log.h"
-#include "utils/i2c.h"
+#include "utils/i2c_config.h"
 #include "utils/errors.h"
 #include "drivers/ds1307.h"
 #include "drivers/vcnl4010.h"

@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "utils/i2c.h"
+#include "utils/i2c_config.h"
 
 #define VCNL4010_SENSOR_ADDR 0x13
 
