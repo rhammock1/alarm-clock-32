@@ -14,14 +14,18 @@ void configure_error_led(void)
   gpio_set_direction(ERROR_LED, GPIO_MODE_OUTPUT);
 }
 
-void error_blink_task(void)
+void error_blink_task(error_source_t source)
 {
+  int blink_count = (int)source;
   while (1)
   {
-    gpio_set_level(ERROR_LED, 0);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-    gpio_set_level(ERROR_LED, 1);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    for(int i = 0; i < blink_count; i++) {
+      gpio_set_level(ERROR_LED, 0);
+      vTaskDelay(100 / portTICK_PERIOD_MS);
+      gpio_set_level(ERROR_LED, 1);
+      vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
+    vTaskDelay(1500 / portTICK_PERIOD_MS);
   }
 }
 

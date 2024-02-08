@@ -95,7 +95,7 @@ esp_err_t ds1307_init() {
     esp_err_t ret = ds1307_set_time(&timeinfo);
     if (ret != ESP_OK) {
       ESP_LOGE(TAG, "Error setting time: %d", ret);
-      error_blink_task();
+      error_blink_task(SOURCE_DS1307);
     }
   }
 

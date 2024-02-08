@@ -57,7 +57,7 @@ void vcnl4010_writeProximityRate(uint8_t rate) {
   esp_err_t ret = vcnl4010_register_write_byte(VCNL4010_PROXRATE, rate);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error writing proximity rate: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 }
 
@@ -65,7 +65,7 @@ void vcnl4010_readProximityRate(uint8_t *rate) {
   esp_err_t ret = vcnl4010_register_read(VCNL4010_PROXRATE, rate, 1);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error reading proximity rate: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 }
 
@@ -75,14 +75,14 @@ void vcnl4010_readAmbientLight(uint16_t *ambient_light) {
   esp_err_t ret = vcnl4010_register_read(VCNL4010_AMBIENTRESULT1, &high_byte, 1);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error reading ambient light register 1: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 
   ret = vcnl4010_register_read(VCNL4010_AMBIENTRESULT0, &low_byte, 1);
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "Error reading ambient light register 0: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 
   *ambient_light = (high_byte << 8) | low_byte;
@@ -93,7 +93,7 @@ void vcnl4010_readCommandRegister(uint8_t *command_register) {
   esp_err_t ret = vcnl4010_register_read(VCNL4010_COMMAND, command_register, 1);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error reading command register: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 }
 
@@ -105,14 +105,14 @@ void vcnl4010_readProximityResult(uint16_t *proximity_result) {
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "Error reading proximity result register 1: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 
   ret = vcnl4010_register_read(VCNL4010_PROXIMITYRESULT0, &low_byte, 1);
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "Error reading proximity result register 0: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 
   // Print the low byte and high byte
@@ -127,7 +127,7 @@ void vcnl4010_writeCommandRegister(VCNL4010CommandRegister commandRegister) {
   esp_err_t ret = vcnl4010_register_write_byte(VCNL4010_COMMAND, byte);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error writing command register: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 }
 
@@ -135,7 +135,7 @@ void vcnl4010_writeInterruptControlRegister(uint8_t interruptControl) {
   esp_err_t ret = vcnl4010_register_write_byte(VCNL4010_INTCONTROL, interruptControl);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error writing interrupt control register: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 }
 
@@ -143,7 +143,7 @@ void vcnl4010_readInterruptControlRegister(uint8_t *interrupt_control_register) 
   esp_err_t ret = vcnl4010_register_read(VCNL4010_INTCONTROL, interrupt_control_register, 1);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error reading interrupt control register: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 }
 
@@ -154,13 +154,13 @@ void vcnl4010_writeThresholdRegisters(uint8_t reg_addr, uint16_t threshold) {
   esp_err_t ret = vcnl4010_register_write_byte(reg_addr, high_byte);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error writing low byte to threshold register: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 
   ret = vcnl4010_register_write_byte(reg_addr + 1, low_byte);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error writing high byte to threshold register: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 }
 
@@ -168,7 +168,7 @@ void vcnl4010_writeIRLedCurrent(uint8_t current) {
   esp_err_t ret = vcnl4010_register_write_byte(VCNL4010_IRLED, current);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error writing IR LED current: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 }
 
@@ -176,7 +176,7 @@ void vcnl4010_writeAmbientParameter(uint8_t parameter) {
   esp_err_t ret = vcnl4010_register_write_byte(VCNL4010_AMBIENTPARAMETER, parameter);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error writing ambient parameter: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 }
 
@@ -184,7 +184,7 @@ void vcnl4010_readInterruptStatus(uint8_t *interrupt_status) {
   esp_err_t ret = vcnl4010_register_read(VCNL4010_INTERRUPTSTATUS, interrupt_status, 1);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error reading interrupt status register: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 }
 
@@ -192,7 +192,7 @@ void vcnl4010_writeInterruptStatus(uint8_t interrupt_status) {
   esp_err_t ret = vcnl4010_register_write_byte(VCNL4010_INTERRUPTSTATUS, interrupt_status);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error writing interrupt status register: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_VCNL4010);
   }
 }
 

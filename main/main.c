@@ -85,7 +85,7 @@ void configure_interrupts(void) {
   esp_err_t add_ret = gpio_isr_handler_add(GPIO_INPUT_IO_23, gpio_23_isr_handler, (void *)GPIO_INPUT_IO_23);
   if (add_ret != ESP_OK) {
     ESP_LOGE(TAG, "Error adding ISR handler: %d", add_ret);
-    error_blink_task();
+    error_blink_task(SOURCE_I2C);
   }
 
   ESP_LOGI(TAG, "Interrupts configured successfully");
@@ -121,14 +121,14 @@ void init_i2c_sensors(void)
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "Error initializing VCNL4010: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_I2C);
   }
   ESP_LOGI(TAG, "VCNL4010 initialized successfully");
 
   ret = ds1307_init();
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Error initializing DS1307: %d", ret);
-    error_blink_task();
+    error_blink_task(SOURCE_I2C);
   }
   ESP_LOGI(TAG, "DS1307 initialized successfully");
 }
@@ -156,7 +156,11 @@ void app_main(void)
   while(1) {
     ESP_LOGI(TAG, "Waiting for interrupt");
 
-    ds1307_read_time(&timeinfo);
+    esp_err_t ret = ds1307_read_time(&timeinfo);
+    if (ret != ESP_OK) {
+      ESP_LOGE(TAG, "Error reading time: %d", ret);
+      error_blink_task(SOURCE_DS1307);
+    }
     ESP_LOGI(TAG, "Time read from DS1307: %d-%d-%d %d:%d:%d",
       timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday,
       timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
