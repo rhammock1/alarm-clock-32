@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include "esp_log.h"
+#include "nvs_flash.h"
 #include "i2c_config.h"
 #include "errors.h"
 #include "ds1307.h"
 #include "vcnl4010.h"
 #include "tm1637.h"
+#include "wifi.h"
 #include "http_server.h"
 
 static const char *TAG = "ALARM-CLOCK";
@@ -148,10 +150,22 @@ void app_main(void)
   ESP_ERROR_CHECK(i2c_master_init());
   ESP_LOGI(TAG, "I2C initialized successfully");
 
+  // Initialize NVS
+  esp_err_t ret = nvs_flash_init();
+  if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+  {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+  }
+  ESP_ERROR_CHECK(ret);
+
   configure_error_led();
   init_i2c_sensors();
   init_other_drivers();
   configure_interrupts();
+
+  // Start the wifi [BLOCKS REST OF CODE]
+  wifi_init_sta();
 
   struct tm timeinfo;
   while(1) {
@@ -166,11 +180,6 @@ void app_main(void)
       timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday,
       timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
 
-    bool pm = timeinfo.tm_hour > 12;
-    // Convert hour to 12 hour format
-    if (pm) {
-      timeinfo.tm_hour -= 12;
-    }
     tm1637_update_time(timeinfo.tm_hour, timeinfo.tm_min);
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
