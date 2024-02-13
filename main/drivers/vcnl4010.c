@@ -224,8 +224,8 @@ esp_err_t vcnl4010_init() {
 
   vcnl4010_writeInterruptControlRegister(0x42);
 
-  vcnl4010_writeThresholdRegisters(VCNL4010_LOWTHRESHOLD1, 0x0000);
-  vcnl4010_writeThresholdRegisters(VCNL4010_HITHRESHOLD1, 0x16E4);
+  vcnl4010_writeThresholdRegisters(VCNL4010_LOWTHRESHOLD1, 0x0000); // far from sensor
+  vcnl4010_writeThresholdRegisters(VCNL4010_HITHRESHOLD1, 0x0898); // close to sensor
 
   // Do this with all of the other functions
   vcnl4010_writeCommandRegister((VCNL4010CommandRegister) {
