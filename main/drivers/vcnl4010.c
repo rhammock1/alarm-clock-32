@@ -1,8 +1,12 @@
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "vcnl4010.h"
 #include "errors.h"
 
 static const char *TAG = "VCNL4010";
+
+SemaphoreHandle_t vcnl4010_mux;
 
 /**
  * @brief Read a sequence of bytes from a vcnl4010 sensor registers
@@ -10,7 +14,13 @@ static const char *TAG = "VCNL4010";
 static esp_err_t
 vcnl4010_register_read(uint8_t reg_addr, uint8_t *data, size_t len)
 {
-  return i2c_master_write_read_device(I2C_MASTER_NUM, VCNL4010_SENSOR_ADDR, &reg_addr, 1, data, len, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
+  if(xSemaphoreTake(vcnl4010_mux, portMAX_DELAY) != pdTRUE) {
+    ESP_LOGE(TAG, "Could not take vcnl4010_mux");
+    return ESP_FAIL;
+  }
+  esp_err_t ret = i2c_master_write_read_device(I2C_MASTER_NUM, VCNL4010_SENSOR_ADDR, &reg_addr, 1, data, len, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
+  xSemaphoreGive(vcnl4010_mux);
+  return ret;
 }
 
 /**
@@ -18,11 +28,16 @@ vcnl4010_register_read(uint8_t reg_addr, uint8_t *data, size_t len)
  */
 static esp_err_t vcnl4010_register_write_byte(uint8_t reg_addr, uint8_t data)
 {
+  if(xSemaphoreTake(vcnl4010_mux, portMAX_DELAY) != pdTRUE) {
+    ESP_LOGE(TAG, "Could not take vcnl4010_mux");
+    return ESP_FAIL;
+  }
   int ret;
   uint8_t write_buf[2] = {reg_addr, data};
 
   ret = i2c_master_write_to_device(I2C_MASTER_NUM, VCNL4010_SENSOR_ADDR, write_buf, sizeof(write_buf), I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
 
+  xSemaphoreGive(vcnl4010_mux);
   return ret;
 }
 
@@ -198,6 +213,7 @@ void vcnl4010_writeInterruptStatus(uint8_t interrupt_status) {
 
 esp_err_t vcnl4010_init() {
   ESP_LOGI(TAG, "Initializing vcnl4010 sensor..");
+  vcnl4010_mux = xSemaphoreCreateMutex();
   vcnl4010_writeIRLedCurrent(0x0A);
 
   vcnl4010_writeProximityRate(0x02);
