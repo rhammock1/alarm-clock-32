@@ -142,6 +142,19 @@ void init_other_drivers() {
   ESP_LOGI(TAG, "TM1637 initialized successfully");
 }
 
+void init_wifi_and_serve() {
+  ESP_LOGI(TAG, "Initializing wifi and server..");
+  wifi_init_sta();
+  ESP_LOGI(TAG, "Wifi initialized successfully");
+
+  esp_err_t ret = init_http_server();
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "Error initializing HTTP server: %d", ret);
+    error_blink_task(SOURCE_WIFI);
+  }
+  ESP_LOGI(TAG, "HTTP server initialized successfully");
+}
+
 void app_main(void)
 {
   ESP_LOGI(TAG, "Beginning alarm clock setup..");
@@ -165,7 +178,7 @@ void app_main(void)
   configure_interrupts();
 
   // Start the wifi [BLOCKS REST OF CODE]
-  wifi_init_sta();
+  init_wifi_and_serve();
 
   struct tm timeinfo;
   while(1) {
