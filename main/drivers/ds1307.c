@@ -1,10 +1,14 @@
 #include <time.h>
 #include <string.h>
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "ds1307.h"
 #include "errors.h"
 
 static const char *TAG = "DS1307";
+
+SemaphoreHandle_t ds1307_mux;
 
 /**
  * @brief Read a sequence of bytes from a ds1307_ sensor registers
@@ -25,6 +29,10 @@ uint8_t bcd_to_dec(uint8_t val)
 }
 
 esp_err_t ds1307_set_time(struct tm *timeinfo) {
+  if(xSemaphoreTake(ds1307_mux, MAX_BLOCK) != pdTRUE) {
+    ESP_LOGE(TAG, "Could not take ds1307_mux");
+    return ESP_FAIL;
+  }
   uint8_t write_buf[8] = {
     0x00,
     dec_to_bcd(timeinfo->tm_sec), // Seconds
@@ -41,10 +49,15 @@ esp_err_t ds1307_set_time(struct tm *timeinfo) {
     ESP_LOGE(TAG, "Error setting time: %d", ret);
     return ret;
   }
+  xSemaphoreGive(ds1307_mux);
   return ESP_OK;
 }
 
 esp_err_t ds1307_read_time(struct tm *timeinfo) {
+  if(xSemaphoreTake(ds1307_mux, MAX_BLOCK) != pdTRUE) {
+    ESP_LOGE(TAG, "Could not take ds1307_mux");
+    return ESP_FAIL;
+  }
   uint8_t read_buf[7];
 
   esp_err_t ret = ds1307_register_read(0x00, read_buf, sizeof(read_buf));
@@ -62,11 +75,13 @@ esp_err_t ds1307_read_time(struct tm *timeinfo) {
   timeinfo->tm_mon = bcd_to_dec(read_buf[5]) - 1;
   timeinfo->tm_year = bcd_to_dec(read_buf[6]) + 2000;
 
+  xSemaphoreGive(ds1307_mux);
   return ESP_OK;
 }
 
 esp_err_t ds1307_init() {
   ESP_LOGI(TAG, "Initializing DS1307..");
+  ds1307_mux = xSemaphoreCreateMutex();
 
   struct tm timeinfo;
 
