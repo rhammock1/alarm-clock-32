@@ -6,6 +6,7 @@
 #include "ds1307.h"
 #include "vcnl4010.h"
 #include "tm1637.h"
+#include "w25q128.h"
 #include "wifi.h"
 #include "http_server.h"
 
@@ -134,6 +135,13 @@ void init_i2c_sensors(void)
     error_blink_task(SOURCE_I2C);
   }
   ESP_LOGI(TAG, "DS1307 initialized successfully");
+
+  // ret = w25q128_init();
+  // if (ret != ESP_OK) {
+  //   ESP_LOGE(TAG, "Error initializing W25Q128: %d", ret);
+  //   error_blink_task(SOURCE_I2C);
+  // }
+  // ESP_LOGI(TAG, "W25Q128 initialized successfully");
 }
 
 void init_other_drivers() {
