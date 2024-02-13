@@ -53,12 +53,10 @@ esp_err_t ds1307_read_time(struct tm *timeinfo) {
     return ret;
   }
 
-  timeinfo->tm_sec = bcd_to_dec(read_buf[0] & 0x7F);
+  timeinfo->tm_sec = bcd_to_dec(read_buf[0]);
   timeinfo->tm_min = bcd_to_dec(read_buf[1]);
-  timeinfo->tm_hour = bcd_to_dec(read_buf[2] & 0x1f);
-  if(read_buf[2] & 0x20) {
-    timeinfo->tm_hour += 12;
-  }
+  timeinfo->tm_hour = bcd_to_dec(read_buf[2]);
+  ESP_LOGI(TAG, "READ HOUR: %d", timeinfo->tm_hour);
   timeinfo->tm_wday = bcd_to_dec(read_buf[3]) - 1;
   timeinfo->tm_mday = bcd_to_dec(read_buf[4]);
   timeinfo->tm_mon = bcd_to_dec(read_buf[5]) - 1;
