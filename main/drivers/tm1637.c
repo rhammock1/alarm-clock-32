@@ -1,10 +1,14 @@
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "driver/gpio.h"
 #include "rom/ets_sys.h"
 #include "tm1637.h"
 #include "errors.h"
 
 static const char *TAG = "TM1637";
+
+SemaphoreHandle_t tm1637_mux;
 
 void configure_gpio() {
   // Set the CLK and DIO pins as output
@@ -62,12 +66,20 @@ void tm1637_stop() {
   ets_delay_us(2);
 }
 
-void tm1637_set_brightness(uint8_t brightness) {
+esp_err_t tm1637_set_brightness(uint8_t brightness) {
+  if (xSemaphoreTake(tm1637_mux, MAX_BLOCK) != pdTRUE)
+  {
+    ESP_LOGE(TAG, "Could not take tm1637_mux");
+    return ESP_FAIL;
+  }
   // Set the brightness of the display
   uint8_t cmd = 0x88 + brightness;
   tm1637_start();
   tm1637_write_byte(cmd);
   tm1637_stop();
+
+  xSemaphoreGive(tm1637_mux);
+  return ESP_OK;
 }
 
 static const int8_t tm1637_symbols[] = {
@@ -94,7 +106,7 @@ void tm1637_set_segment_raw(const uint8_t segment_idx, const uint8_t data)
   tm1637_write_byte(data);
   tm1637_stop();
 
-  tm1637_set_brightness(1);
+  // tm1637_set_brightness(1);
 }
 
 void tm1637_set_segment_number(const uint8_t segment_idx, const uint8_t num)
@@ -114,7 +126,21 @@ void tm1637_set_segment_number(const uint8_t segment_idx, const uint8_t num)
   tm1637_set_segment_raw(segment_idx, seg_data);
 }
 
-void tm1637_update_time(uint8_t hours, uint8_t minutes){
+esp_err_t tm1637_update_time(uint8_t hours, uint8_t minutes){
+  ESP_LOGI(TAG, "Updating time: %d:%d", hours, minutes);
+
+  if (xSemaphoreTake(tm1637_mux, MAX_BLOCK) != pdTRUE)
+  {
+    ESP_LOGE(TAG, "Could not take tm1637_mux");
+    return ESP_FAIL;
+  }
+
+  bool pm = hours > 12;
+  // Convert hour to 12 hour format
+  if (pm) {
+    hours -= 12;
+  }
+
   // Write hours and minutes to the display
   tm1637_start();
   if(hours < 10) {
@@ -133,11 +159,21 @@ void tm1637_update_time(uint8_t hours, uint8_t minutes){
     tm1637_set_segment_number(3, minutes % 10);
   }
   tm1637_stop();
+
+  xSemaphoreGive(tm1637_mux);
+  return ESP_OK;
 }
 
-void tm1637_init() {
+esp_err_t tm1637_init() {
   ESP_LOGI(TAG, "Initializing TM1637..");
+  tm1637_mux = xSemaphoreCreateMutex();
   configure_gpio();
+
+  if (xSemaphoreTake(tm1637_mux, MAX_BLOCK) != pdTRUE)
+  {
+    ESP_LOGE(TAG, "Could not take tm1637_mux");
+    return ESP_FAIL;
+  }
 
   tm1637_start();
   tm1637_write_byte(0x40);
@@ -154,9 +190,11 @@ void tm1637_init() {
   }
   tm1637_stop();
 
+  xSemaphoreGive(tm1637_mux);
 
   // Set the brightness to 7
   tm1637_set_brightness(1);
 
   ESP_LOGI(TAG, "TM1637 initialized successfully");
+  return ESP_OK;
 }

@@ -8,6 +8,6 @@
 #define TM1637_SEGMENTS_ADDR 0xC0
 #define TM1637_BRIGHTNESS_ADDR 0x80
 
-void tm1637_init(void);
-void tm1637_set_brightness(uint8_t brightness);
-void tm1637_update_time(uint8_t hours, uint8_t minutes);
+esp_err_t tm1637_init(void);
+esp_err_t tm1637_set_brightness(uint8_t brightness);
+esp_err_t tm1637_update_time(uint8_t hours, uint8_t minutes);
