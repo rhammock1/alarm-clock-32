@@ -5,6 +5,8 @@
 
 // static const char *TAG = "ERROR";
 
+int MAX_BLOCK = 1000 / portTICK_PERIOD_MS; // about 1 second
+
 #define ERROR_LED 2
 
 void configure_error_led(void)

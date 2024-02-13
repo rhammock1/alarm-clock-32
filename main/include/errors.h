@@ -7,6 +7,8 @@ typedef enum {
   SOURCE_TM1637 = 4,
 } error_source_t;
 
+extern int MAX_BLOCK;
+
 void configure_error_led(void);
 
 void error_blink_task(error_source_t source);

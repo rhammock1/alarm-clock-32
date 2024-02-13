@@ -14,7 +14,8 @@ SemaphoreHandle_t vcnl4010_mux;
 static esp_err_t
 vcnl4010_register_read(uint8_t reg_addr, uint8_t *data, size_t len)
 {
-  if(xSemaphoreTake(vcnl4010_mux, portMAX_DELAY) != pdTRUE) {
+  if (xSemaphoreTake(vcnl4010_mux, MAX_BLOCK) != pdTRUE)
+  {
     ESP_LOGE(TAG, "Could not take vcnl4010_mux");
     return ESP_FAIL;
   }
@@ -28,7 +29,8 @@ vcnl4010_register_read(uint8_t reg_addr, uint8_t *data, size_t len)
  */
 static esp_err_t vcnl4010_register_write_byte(uint8_t reg_addr, uint8_t data)
 {
-  if(xSemaphoreTake(vcnl4010_mux, portMAX_DELAY) != pdTRUE) {
+  if (xSemaphoreTake(vcnl4010_mux, MAX_BLOCK) != pdTRUE)
+  {
     ESP_LOGE(TAG, "Could not take vcnl4010_mux");
     return ESP_FAIL;
   }
