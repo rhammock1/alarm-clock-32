@@ -141,6 +141,10 @@ esp_err_t tm1637_update_time(uint8_t hours, uint8_t minutes){
     hours -= 12;
   }
 
+  if(hours == 0) {
+    hours = 12;
+  }
+
   // Write hours and minutes to the display
   tm1637_start();
   if(hours < 10) {
