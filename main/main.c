@@ -136,12 +136,12 @@ void init_i2c_sensors(void)
   }
   ESP_LOGI(TAG, "DS1307 initialized successfully");
 
-  // ret = w25q128_init();
-  // if (ret != ESP_OK) {
-  //   ESP_LOGE(TAG, "Error initializing W25Q128: %d", ret);
-  //   error_blink_task(SOURCE_I2C);
-  // }
-  // ESP_LOGI(TAG, "W25Q128 initialized successfully");
+  ret = w25q128_init();
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "Error initializing W25Q128: %d", ret);
+    error_blink_task(SOURCE_I2C);
+  }
+  ESP_LOGI(TAG, "W25Q128 initialized successfully");
 }
 
 void init_other_drivers() {
