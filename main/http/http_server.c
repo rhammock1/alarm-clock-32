@@ -13,6 +13,15 @@ esp_err_t get_base_path_handler(httpd_req_t *req)
   return ESP_OK;
 }
 
+httpd_uri_t routes[] = {
+  {
+    .uri       = "/",
+    .method    = HTTP_GET,
+    .handler   = get_base_path_handler,
+    .user_ctx  = NULL
+  }
+};
+
 esp_err_t init_http_server(void)
 {
   httpd_handle_t server = NULL;
@@ -25,13 +34,9 @@ esp_err_t init_http_server(void)
   }
 
   // Register URI handlers
-  httpd_uri_t base_path_get = {
-    .uri       = "/",
-    .method    = HTTP_GET,
-    .handler   = get_base_path_handler,
-    .user_ctx  = NULL
-  };
-  httpd_register_uri_handler(server, &base_path_get);
+  for (int i = 0; i < sizeof(routes) / sizeof(httpd_uri_t); i++) {
+    httpd_register_uri_handler(server, &routes[i]);
+  }
 
   return ESP_OK;
 }
