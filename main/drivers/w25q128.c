@@ -1,36 +1,59 @@
 #include <string.h>
+#include <inttypes.h>
 #include "esp_log.h"
 #include "w25q128.h"
 
-#define CMD_READ_ID 0x9F
+static const char *TAG = "W25Q128";
 
-esp_err_t read_flash_capacity(spi_device_handle_t handle)
+#define CMD_READ_ID 0x4B
+
+esp_err_t read_device_id(spi_device_handle_t handle)
 {
   esp_err_t ret;
 
   uint8_t cmd = CMD_READ_ID;
-  uint8_t id[3];
+  uint8_t dummy_byte = 0x00;
+  uint8_t id[8];
+
+  spi_device_acquire_bus(handle, portMAX_DELAY);
 
   spi_transaction_t t;
-  memset(&t, 0, sizeof(t)); // Zero out the transaction
-  t.length = 8;             // Command is 8 bits
-  t.tx_buffer = &cmd;       // The data is the command
-  t.rxlength = 8 * 3;       // Receive 24 bits back
-  t.rx_buffer = id;         // Output buffer
-
-  ret = spi_device_transmit(handle, &t); // Transmit!
+  memset(&t, 0, sizeof(t));       // Zero out the transaction
+  t.length = 8;   // Command is 8 bits
+  t.tx_buffer = &cmd;             // The data is the command
+  t.flags = SPI_TRANS_CS_KEEP_ACTIVE; // Keep CS active after data transfer
+  ret = spi_device_transmit(handle, &t);
   if(ret != ESP_OK) {
-    ESP_LOGE("SPI Flash", "Error reading flash capacity: %d", ret);
+    ESP_LOGE(TAG, "Error sending read ID command: %d", ret);
     return ret;
   }
-  // assert(ret == ESP_OK);                 // Should have had no issues.
 
-  // The manufacturer ID, memory type, and capacity are now in id[0], id[1], and id[2]
-  ESP_LOGI("SPI Flash", "Manufacturer ID: 0x%X, Memory Type: 0x%X, Capacity: 0x%X", id[0], id[1], id[2]);
+  // Dummy cycles
+  memset(&t, 0, sizeof(t));       // Zero out the transaction
+  t.length = (8 * 4);             // 4 dummy bytes
+  t.tx_buffer = &dummy_byte;
+  t.flags = SPI_TRANS_CS_KEEP_ACTIVE; // Keep CS active after data transfer
+  ret = spi_device_transmit(handle, &t);
+  if(ret != ESP_OK) {
+    ESP_LOGE(TAG, "Error sending dummy cycles: %d", ret);
+    return ret;
+  }
+
+  // Read the ID
+  memset(&t, 0, sizeof(t));       // Zero out the transaction
+  t.length = 8 * 8;               // Receive 64 bits back
+  t.rx_buffer = &id;              // Receive 64 bits back
+  ret = spi_device_transmit(handle, &t);
+  if(ret != ESP_OK) {
+    ESP_LOGE(TAG, "Error reading flash capacity: %d", ret);
+    return ret;
+  }
+
+  spi_device_release_bus(handle);
+
+  // Print the ID
+  ESP_LOGI(TAG, "ID: %02X %02X %02X %02X %02X %02X %02X %02X", id[0], id[1], id[2], id[3], id[4], id[5], id[6], id[7]);
   return ESP_OK;
-
-  // You can then look up the capacity based on the capacity ID (id[2])
-  // For the W25Q128, the capacity ID should be 0x18, which corresponds to a capacity of 128M-bit (16M-byte)
 }
 
 esp_err_t w25q128_init(void) {
@@ -43,8 +66,7 @@ esp_err_t w25q128_init(void) {
     .mosi_io_num = PIN_NUM_MOSI,
     .sclk_io_num = PIN_NUM_CLK,
     .quadwp_io_num = -1,
-    .quadhd_io_num = -1,
-    .max_transfer_sz = 4096};
+    .quadhd_io_num = -1};
   ret = spi_bus_initialize(HOST, &buscfg, DMA_CHAN);
   assert(ret == ESP_OK);
 
@@ -54,6 +76,7 @@ esp_err_t w25q128_init(void) {
     .mode = 0,                          // SPI mode 0
     .spics_io_num = PIN_NUM_CS,         // CS pin
     .queue_size = 7,                    // We want to be able to queue 7 transactions at a time
+    // .dummy_bits = 4,                    // 4 clock cycles between command and receiving data
   };
   spi_device_handle_t handle;
   ret = spi_bus_add_device(HOST, &devcfg, &handle);
@@ -61,7 +84,7 @@ esp_err_t w25q128_init(void) {
 
   // Use the SPI device
   // You can use the handle to send and receive data with spi_device_transmit
-  ret = read_flash_capacity(handle);
+  ret = read_device_id(handle);
   if(ret != ESP_OK) {
     return ESP_FAIL;
   }

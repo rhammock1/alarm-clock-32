@@ -135,19 +135,25 @@ void init_i2c_sensors(void)
     error_blink_task(SOURCE_I2C);
   }
   ESP_LOGI(TAG, "DS1307 initialized successfully");
-
-  ret = w25q128_init();
-  if (ret != ESP_OK) {
-    ESP_LOGE(TAG, "Error initializing W25Q128: %d", ret);
-    error_blink_task(SOURCE_I2C);
-  }
-  ESP_LOGI(TAG, "W25Q128 initialized successfully");
 }
 
 void init_other_drivers() {
   ESP_LOGI(TAG, "Initializing other drivers..");
-  tm1637_init();
+  esp_err_t ret = tm1637_init();
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "Error initializing TM1637: %d", ret);
+    error_blink_task(SOURCE_I2C);
+  }
   ESP_LOGI(TAG, "TM1637 initialized successfully");
+  
+  ret = w25q128_init();
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "Error initializing W25Q128: %d", ret);
+    error_blink_task(SOURCE_I2C);
+  }
+  ESP_LOGI(TAG, "W25Q128 initialized successfully");
 }
 
 void init_wifi_and_serve() {
