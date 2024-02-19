@@ -7,6 +7,54 @@ static const char *TAG = "W25Q128";
 
 #define CMD_READ_ID 0x4B
 
+esp_err_t read_manufacturer_id(spi_device_handle_t handle) {
+  esp_err_t ret;
+
+  uint8_t cmd = 0x90;
+  uint8_t dummy_byte = 0x00;
+  uint8_t ids[2];
+
+  spi_device_acquire_bus(handle, portMAX_DELAY);
+
+  spi_transaction_t t;
+  memset(&t, 0, sizeof(t));       // Zero out the transaction
+  t.length = 8;   // Command is 8 bits
+  t.tx_buffer = &cmd;             // The data is the command
+  t.flags = SPI_TRANS_CS_KEEP_ACTIVE; // Keep CS active after data transfer
+  ret = spi_device_transmit(handle, &t);
+  if(ret != ESP_OK) {
+    ESP_LOGE(TAG, "Error sending read manufacturer ID command: %d", ret);
+    return ret;
+  }
+
+  // Dummy cycles
+  memset(&t, 0, sizeof(t));       // Zero out the transaction
+  t.length = (8 * 3);             // 24 dummy bits
+  t.tx_buffer = &dummy_byte;
+  t.flags = SPI_TRANS_CS_KEEP_ACTIVE; // Keep CS active after data transfer
+  ret = spi_device_transmit(handle, &t);
+  if(ret != ESP_OK) {
+    ESP_LOGE(TAG, "Error sending dummy cycles: %d", ret);
+    return ret;
+  }
+
+  // Read the ID
+  memset(&t, 0, sizeof(t));       // Zero out the transaction
+  t.length = 8 * 2;              // Receive 16 bits back
+  t.rx_buffer = &ids;              // Receive 16 bits back
+  ret = spi_device_transmit(handle, &t);
+  if(ret != ESP_OK) {
+    ESP_LOGE(TAG, "Error reading manufacturer ID: %d", ret);
+    return ret;
+  }
+
+  spi_device_release_bus(handle);
+
+  // Print the ID
+  ESP_LOGI(TAG, "Manufacturer ID: %02X %02X", ids[0], ids[1]);
+  return ESP_OK;
+}
+
 esp_err_t read_device_id(spi_device_handle_t handle)
 {
   esp_err_t ret;
@@ -88,5 +136,11 @@ esp_err_t w25q128_init(void) {
   if(ret != ESP_OK) {
     return ESP_FAIL;
   }
+
+  ret = read_manufacturer_id(handle);
+  if(ret != ESP_OK) {
+    return ESP_FAIL;
+  }
+
   return ESP_OK;
 }
