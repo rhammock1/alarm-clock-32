@@ -192,7 +192,7 @@ void app_main(void)
   configure_interrupts();
 
   // Start the wifi [BLOCKS REST OF CODE]
-  init_wifi_and_serve();
+  // init_wifi_and_serve();
 
   struct tm timeinfo;
   while(1) {
