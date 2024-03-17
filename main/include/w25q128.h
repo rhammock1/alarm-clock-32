@@ -1,5 +1,6 @@
 #include "driver/spi_master.h"
 #include "esp_err.h"
+#include "lfs.h"
 
 #define HOST HSPI_HOST
 #define DMA_CHAN 2

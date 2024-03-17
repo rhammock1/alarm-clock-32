@@ -1,3 +1,4 @@
 build/
 main/include/credentials.h
 managed_components/
+lib/*
