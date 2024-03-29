@@ -4,3 +4,5 @@
 #define WIFI_FAIL_BIT BIT1
 
 void wifi_init_sta(void);
+
+void post_logs(char *data, int len);

@@ -1,6 +1,7 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_netif.h"
+#include "esp_http_client.h"
 #include "freertos/event_groups.h"
 #include "esp_log.h"
 #include "wifi.h"
@@ -111,3 +112,34 @@ void wifi_init_sta(void)
     ESP_LOGE(TAG, "UNEXPECTED EVENT");
   }
 }
+
+// FIXME before testing
+// void post_logs(char *log, int len) {
+//   // Make sure the wifi is connected
+//   if(!(xEventGroupGetBits(s_wifi_event_group) & WIFI_CONNECTED_BIT)) {
+//     ESP_LOGE(TAG, "Wifi not connected, cannot post logs");
+//     return;
+//   }
+//   // Make a POST request to 192.168.1.1:6969/logs with the log data
+//     esp_http_client_config_t config = {
+//         .url = "http://192.168.1.1:6969/logs",
+//         .method = HTTP_METHOD_POST,
+//     };
+
+//     esp_http_client_handle_t client = esp_http_client_init(&config);
+
+//     esp_http_client_set_header(client, "Content-Type", "text/plain");
+//     esp_http_client_set_post_field(client, log, len);
+
+//     esp_err_t err = esp_http_client_perform(client);
+
+//     if (err == ESP_OK) {
+//         ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %d",
+//             esp_http_client_get_status_code(client),
+//             esp_http_client_get_content_length(client));
+//     } else {
+//         ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
+//     }
+
+//     esp_http_client_cleanup(client);
+// }
