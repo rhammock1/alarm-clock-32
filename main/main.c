@@ -196,16 +196,16 @@ void app_main(void)
 
   struct tm timeinfo;
   while(1) {
-    ESP_LOGI(TAG, "Waiting for interrupt");
+    // ESP_LOGI(TAG, "Waiting for interrupt");
 
     esp_err_t ret = ds1307_read_time(&timeinfo);
     if (ret != ESP_OK) {
       ESP_LOGE(TAG, "Error reading time: %d", ret);
       error_blink_task(SOURCE_DS1307);
     }
-    ESP_LOGI(TAG, "Time read from DS1307: %d-%d-%d %d:%d:%d",
-      timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday,
-      timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+    // ESP_LOGI(TAG, "Time read from DS1307: %d-%d-%d %d:%d:%d",
+    //   timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday,
+    //   timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
 
     tm1637_update_time(timeinfo.tm_hour, timeinfo.tm_min);
 

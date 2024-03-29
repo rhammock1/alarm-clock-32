@@ -127,7 +127,7 @@ void tm1637_set_segment_number(const uint8_t segment_idx, const uint8_t num)
 }
 
 esp_err_t tm1637_update_time(uint8_t hours, uint8_t minutes){
-  ESP_LOGI(TAG, "Updating time: %d:%d", hours, minutes);
+  // ESP_LOGI(TAG, "Updating time: %d:%d", hours, minutes);
 
   if (xSemaphoreTake(tm1637_mux, MAX_BLOCK) != pdTRUE)
   {

@@ -69,7 +69,7 @@ esp_err_t ds1307_read_time(struct tm *timeinfo) {
   timeinfo->tm_sec = bcd_to_dec(read_buf[0]);
   timeinfo->tm_min = bcd_to_dec(read_buf[1]);
   timeinfo->tm_hour = bcd_to_dec(read_buf[2]);
-  ESP_LOGI(TAG, "READ HOUR: %d", timeinfo->tm_hour);
+  // ESP_LOGI(TAG, "READ HOUR: %d", timeinfo->tm_hour);
   timeinfo->tm_wday = bcd_to_dec(read_buf[3]) - 1;
   timeinfo->tm_mday = bcd_to_dec(read_buf[4]);
   timeinfo->tm_mon = bcd_to_dec(read_buf[5]) - 1;
@@ -117,9 +117,9 @@ esp_err_t ds1307_init() {
   struct tm timeinfo_read;
   ds1307_read_time(&timeinfo_read);
 
-  ESP_LOGI(TAG, "Time read from DS1307: %d-%d-%d %d:%d:%d",
-    timeinfo_read.tm_year, timeinfo_read.tm_mon, timeinfo_read.tm_mday,
-    timeinfo_read.tm_hour, timeinfo_read.tm_min, timeinfo_read.tm_sec);
+  // ESP_LOGI(TAG, "Time read from DS1307: %d-%d-%d %d:%d:%d",
+  //   timeinfo_read.tm_year, timeinfo_read.tm_mon, timeinfo_read.tm_mday,
+  //   timeinfo_read.tm_hour, timeinfo_read.tm_min, timeinfo_read.tm_sec);
 
   return ESP_OK;
 }
