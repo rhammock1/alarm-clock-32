@@ -157,7 +157,7 @@ void init_other_drivers(spi_device_handle_t w25q128_handle) {
   ESP_LOGI(TAG, "W25Q128 initialized successfully");
 }
 
-void init_wifi_and_serve() {
+void init_wifi_and_serve(void *arg) {
   ESP_LOGI(TAG, "Initializing wifi and server..");
   wifi_init_sta();
   ESP_LOGI(TAG, "Wifi initialized successfully");
@@ -168,6 +168,19 @@ void init_wifi_and_serve() {
     error_blink_task(SOURCE_WIFI);
   }
   ESP_LOGI(TAG, "HTTP server initialized successfully");
+  vTaskDelete(NULL);
+}
+
+void init_littlefs_task(void *pvParameter) {
+  ESP_LOGI(TAG, "Initializing LittleFS..");
+  spi_device_handle_t spi_handle = *(spi_device_handle_t *)pvParameter;
+  esp_err_t ret = init_littlefs(spi_handle);
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "Error initializing LittleFS: %d", ret);
+    error_blink_task(SOURCE_LITTLEFS);
+  }
+  ESP_LOGI(TAG, "LittleFS initialized successfully");
+  vTaskDelete(NULL);
 }
 
 void app_main(void)
@@ -214,10 +227,14 @@ void app_main(void)
 
   init_other_drivers(w25q128_handle);
   configure_interrupts();
-
-  init_littlefs(w25q128_handle);
+  
+  TaskHandle_t lilfs_task_handle;
+  xTaskCreate(init_littlefs_task, "LittleFSInitTask", 4096, &w25q128_handle, 1, &lilfs_task_handle);
+  // init_littlefs(w25q128_handle);
 
   // Start the wifi [BLOCKS REST OF CODE]
+  TaskHandle_t wifi_task_handle;
+  xTaskCreate(init_wifi_and_serve, "WiFiInitTask", 4096, NULL, 1, &wifi_task_handle);
   // init_wifi_and_serve();
 
   struct tm timeinfo;

@@ -7,6 +7,7 @@ typedef enum {
   SOURCE_TM1637 = 4,
   SOURCE_WIFI = 5,
   SOURCE_HTTP_SERVER = 6,
+  SOURCE_LITTLEFS = 7,
 } error_source_t;
 
 extern int MAX_BLOCK;

@@ -72,7 +72,7 @@ int w25q128_lfs_sync(const struct lfs_config *c) {
     return 0;
 }
 
-void init_littlefs(spi_device_handle_t handle) {
+esp_err_t init_littlefs(spi_device_handle_t handle) {
   lfs_t lfs;
   const struct lfs_config cfg = {
     .context = handle,
@@ -103,7 +103,7 @@ void init_littlefs(spi_device_handle_t handle) {
     if (err) {
         // If the mount still fails, there's a serious problem
         ESP_LOGE(TAG, "Failed to mount or format LittleFS");
-        return;
+        return ESP_FAIL;
     }
   }
 
@@ -136,4 +136,6 @@ void init_littlefs(spi_device_handle_t handle) {
 
   // Clean up
   lfs_unmount(&lfs);
+
+  return ESP_OK;
 }
