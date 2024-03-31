@@ -8,6 +8,7 @@
 #include "tm1637.h"
 #include "w25q128.h"
 #include "wifi.h"
+#include "lilfs.h"
 #include "http_server.h"
 
 static const char *TAG = "ALARM-CLOCK";
@@ -137,7 +138,7 @@ void init_i2c_sensors(void)
   ESP_LOGI(TAG, "DS1307 initialized successfully");
 }
 
-void init_other_drivers() {
+void init_other_drivers(spi_device_handle_t w25q128_handle) {
   ESP_LOGI(TAG, "Initializing other drivers..");
   esp_err_t ret = tm1637_init();
   if (ret != ESP_OK)
@@ -147,7 +148,7 @@ void init_other_drivers() {
   }
   ESP_LOGI(TAG, "TM1637 initialized successfully");
   
-  ret = w25q128_init();
+  ret = w25q128_init(w25q128_handle);
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "Error initializing W25Q128: %d", ret);
@@ -188,24 +189,45 @@ void app_main(void)
 
   configure_error_led();
   init_i2c_sensors();
-  init_other_drivers();
+
+  spi_device_handle_t w25q128_handle;
+    // Initialize the SPI bus
+  spi_bus_config_t buscfg = {
+    .miso_io_num = PIN_NUM_MISO,
+    .mosi_io_num = PIN_NUM_MOSI,
+    .sclk_io_num = PIN_NUM_CLK,
+    .quadwp_io_num = -1,
+    .quadhd_io_num = -1};
+  ret = spi_bus_initialize(HOST, &buscfg, DMA_CHAN);
+  assert(ret == ESP_OK);
+
+  // Initialize the SPI device
+  spi_device_interface_config_t devcfg = {
+    .clock_speed_hz = 10 * 1000 * 1000, // Clock out at 10 MHz
+    .mode = 0,                          // SPI mode 0
+    .spics_io_num = PIN_NUM_CS,         // CS pin
+    .queue_size = 7,                    // We want to be able to queue 7 transactions at a time
+    // .dummy_bits = 4,                    // 4 clock cycles between command and receiving data
+  };
+  ret = spi_bus_add_device(HOST, &devcfg, &w25q128_handle);
+  assert(ret == ESP_OK);
+
+  init_other_drivers(w25q128_handle);
   configure_interrupts();
+
+  init_littlefs(w25q128_handle);
 
   // Start the wifi [BLOCKS REST OF CODE]
   // init_wifi_and_serve();
 
   struct tm timeinfo;
   while(1) {
-    // ESP_LOGI(TAG, "Waiting for interrupt");
 
     esp_err_t ret = ds1307_read_time(&timeinfo);
     if (ret != ESP_OK) {
       ESP_LOGE(TAG, "Error reading time: %d", ret);
       error_blink_task(SOURCE_DS1307);
     }
-    // ESP_LOGI(TAG, "Time read from DS1307: %d-%d-%d %d:%d:%d",
-    //   timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday,
-    //   timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
 
     tm1637_update_time(timeinfo.tm_hour, timeinfo.tm_min);
 
