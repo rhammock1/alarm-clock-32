@@ -1,12 +1,20 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#include "freertos/semphr.h"
 #include "w25q128.h"
 
 static const char *TAG = "W25Q128";
 
+SemaphoreHandle_t w25q128_mux;
+
 esp_err_t spi_write(spi_device_handle_t handle, spi_transaction_t t, const void *data, size_t len, bool keep_cs)
 {
+  if (xSemaphoreTake(w25q128_mux, MAX_BLOCK) != pdTRUE)
+  {
+    ESP_LOGE(TAG, "Could not take w25q128_mux");
+    return ESP_FAIL;
+  }
   memset(&t, 0, sizeof(t));       // Zero out the transaction
   t.length = (8 * len);           // Command is 8 bits
   t.tx_buffer = data;
@@ -21,16 +29,26 @@ esp_err_t spi_write(spi_device_handle_t handle, spi_transaction_t t, const void 
   // printf("Length: %d\n", len);
   // printf("CS: %d\n", keep_cs);
   // printf("--------------------\n");
-  return spi_device_transmit(handle, &t);
+  esp_err_t ret = spi_device_transmit(handle, &t);
+  xSemaphoreGive(w25q128_mux);
+  return ret;
 }
 
 esp_err_t spi_read(spi_device_handle_t handle, spi_transaction_t t, void *data, size_t len, bool keep_cs)
 {
+  if (xSemaphoreTake(w25q128_mux, MAX_BLOCK) != pdTRUE)
+  {
+    ESP_LOGE(TAG, "Could not take w25q128_mux");
+    return ESP_FAIL;
+  }
+
   memset(&t, 0, sizeof(t));       // Zero out the transaction
   t.length = (8 * len);           // Command is 8 bits
   t.rx_buffer = data;
   t.flags = keep_cs ? SPI_TRANS_CS_KEEP_ACTIVE : 0; // Keep CS active after data transfer
-  return spi_device_transmit(handle, &t);
+  esp_err_t ret = spi_device_transmit(handle, &t);
+  xSemaphoreGive(w25q128_mux);
+  return ret;
 }
 
 esp_err_t read_manufacturer_id(spi_device_handle_t handle) {
@@ -348,7 +366,13 @@ esp_err_t w25q128_sector_erase(spi_device_handle_t handle, spi_transaction_t t, 
 }
 
 esp_err_t w25q128_init(spi_device_handle_t handle) {
-  // Initialize SPI
+  ESP_LOGI(TAG, "Initializing W25Q128...");
+  w25q128_mux = xSemaphoreCreateMutex();
+  if(w25q128_mux == NULL) {
+    ESP_LOGE(TAG, "Error creating w25q128_mux");
+    return ESP_FAIL;
+  }
+
   esp_err_t ret;
 
   ret = read_unique_id(handle);
