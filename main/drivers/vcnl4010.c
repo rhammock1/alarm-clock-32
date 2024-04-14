@@ -216,6 +216,10 @@ void vcnl4010_writeInterruptStatus(uint8_t interrupt_status) {
 esp_err_t vcnl4010_init() {
   ESP_LOGI(TAG, "Initializing vcnl4010 sensor..");
   vcnl4010_mux = xSemaphoreCreateMutex();
+  if(vcnl4010_mux == NULL) {
+    ESP_LOGE(TAG, "Error creating vcnl4010_mux");
+    return ESP_FAIL;
+  }
   vcnl4010_writeIRLedCurrent(0x0A);
 
   vcnl4010_writeProximityRate(0x02);

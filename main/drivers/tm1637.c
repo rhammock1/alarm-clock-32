@@ -171,6 +171,10 @@ esp_err_t tm1637_update_time(uint8_t hours, uint8_t minutes){
 esp_err_t tm1637_init() {
   ESP_LOGI(TAG, "Initializing TM1637..");
   tm1637_mux = xSemaphoreCreateMutex();
+  if(tm1637_mux == NULL) {
+    ESP_LOGE(TAG, "Error creating tm1637_mux");
+    return ESP_FAIL;
+  }
   configure_gpio();
 
   if (xSemaphoreTake(tm1637_mux, MAX_BLOCK) != pdTRUE)

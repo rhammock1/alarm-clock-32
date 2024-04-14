@@ -82,6 +82,10 @@ esp_err_t ds1307_read_time(struct tm *timeinfo) {
 esp_err_t ds1307_init() {
   ESP_LOGI(TAG, "Initializing DS1307..");
   ds1307_mux = xSemaphoreCreateMutex();
+  if(ds1307_mux == NULL) {
+    ESP_LOGE(TAG, "Error creating ds1307_mux");
+    return ESP_FAIL;
+  }
 
   struct tm timeinfo;
 
