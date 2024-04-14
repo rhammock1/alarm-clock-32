@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
-#include "freertos/semphr.h"
 #include "w25q128.h"
+#include "errors.h"
 
 static const char *TAG = "W25Q128";
 
