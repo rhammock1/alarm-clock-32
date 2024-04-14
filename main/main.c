@@ -17,9 +17,9 @@ static const char *TAG = "ALARM-CLOCK";
 #define GPIO_INPUT_PIN_SEL_23 (1ULL << GPIO_INPUT_IO_23)
 
 
-TaskHandle_t interrupt_23_task_handle = NULL;
+TaskHandle_t vcnl4010_interrupt_handle = NULL;
 
-void interrupt_23_handler(void *arg)
+void vcnl4010_interrupt_handler(void *arg)
 {
   while (1)
   {
@@ -39,7 +39,6 @@ void interrupt_23_handler(void *arg)
       // Must write ones in each bit to clear the interrupt
       vcnl4010_writeInterruptStatus(0x01);
     }
-    
 
     ESP_LOGI(TAG, "Interrupt status: %d", interrupt_status);
   }
@@ -49,21 +48,21 @@ static void IRAM_ATTR gpio_23_isr_handler(void *arg)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   // Signal the handler task to run
-  vTaskNotifyGiveFromISR(interrupt_23_task_handle, &xHigherPriorityTaskWoken);
+  vTaskNotifyGiveFromISR(vcnl4010_interrupt_handle, &xHigherPriorityTaskWoken);
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void create_interrupt_tasks(void)
 {
   ESP_LOGI(TAG, "Creating interrupt tasks..");
-  // Create the handler task for interrupt 23
+  // Create the handler task for interrupt 23 (VCNL4010 interrupt)
   xTaskCreate(
-    interrupt_23_handler, // Task function
-    "Interrupt 23 Handler",       // Name of task
-    10000,                // Stack size of task
+    vcnl4010_interrupt_handler, // Task function
+    "VCNL4010 Interrupt",       // Name of task
+    2048,                // Stack size of task
     NULL,                 // Parameter of the task
     1,                    // Priority of the task
-    &interrupt_23_task_handle  // Task handle to keep track of created task
+    &vcnl4010_interrupt_handle  // Task handle to keep track of created task
   );
 
   // Add new tasks here
@@ -117,12 +116,11 @@ static esp_err_t i2c_master_init(void)
   return i2c_driver_install(i2c_master_port, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
 }
 
-void init_i2c_sensors(void)
-{
+void init_drivers(spi_device_handle_t w25q128_handle) {
+  esp_err_t ret;
+
   ESP_LOGI(TAG, "Initializing i2c sensors..");
-  esp_err_t ret = vcnl4010_init();
-  // This will need to change to a web notification or something
-  //
+  ret = vcnl4010_init();
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "Error initializing VCNL4010: %d", ret);
@@ -136,11 +134,8 @@ void init_i2c_sensors(void)
     error_blink_task(SOURCE_I2C);
   }
   ESP_LOGI(TAG, "DS1307 initialized successfully");
-}
-
-void init_other_drivers(spi_device_handle_t w25q128_handle) {
-  ESP_LOGI(TAG, "Initializing other drivers..");
-  esp_err_t ret = tm1637_init();
+  
+  ret = tm1637_init();
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "Error initializing TM1637: %d", ret);
@@ -201,7 +196,6 @@ void app_main(void)
   ESP_ERROR_CHECK(ret);
 
   configure_error_led();
-  init_i2c_sensors();
 
   spi_device_handle_t w25q128_handle;
     // Initialize the SPI bus
@@ -220,22 +214,18 @@ void app_main(void)
     .mode = 0,                          // SPI mode 0
     .spics_io_num = PIN_NUM_CS,         // CS pin
     .queue_size = 7,                    // We want to be able to queue 7 transactions at a time
-    // .dummy_bits = 4,                    // 4 clock cycles between command and receiving data
   };
   ret = spi_bus_add_device(HOST, &devcfg, &w25q128_handle);
   assert(ret == ESP_OK);
 
-  init_other_drivers(w25q128_handle);
+  init_drivers(w25q128_handle);
   configure_interrupts();
   
   TaskHandle_t lilfs_task_handle;
   xTaskCreate(init_littlefs_task, "LittleFSInitTask", 4096, &w25q128_handle, 1, &lilfs_task_handle);
-  // init_littlefs(w25q128_handle);
 
-  // Start the wifi [BLOCKS REST OF CODE]
   TaskHandle_t wifi_task_handle;
   xTaskCreate(init_wifi_and_serve, "WiFiInitTask", 4096, NULL, 1, &wifi_task_handle);
-  // init_wifi_and_serve();
 
   struct tm timeinfo;
   while(1) {
