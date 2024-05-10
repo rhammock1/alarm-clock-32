@@ -32,3 +32,5 @@ int w25q128_write_is_in_progress(spi_device_handle_t handle, spi_transaction_t t
 esp_err_t w25q128_read_data(spi_device_handle_t handle, spi_transaction_t t, uint32_t addr, void *data, size_t len);
 esp_err_t w25q128_write_data(spi_device_handle_t handle, spi_transaction_t t, uint32_t addr, const void *data, size_t len);
 esp_err_t w25q128_sector_erase(spi_device_handle_t handle, spi_transaction_t t, uint32_t addr);
+esp_err_t w25q128_chip_erase(spi_device_handle_t handle);
+esp_err_t w25q128_request_erase_chip();

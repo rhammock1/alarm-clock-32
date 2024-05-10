@@ -7,6 +7,7 @@
 static const char *TAG = "W25Q128";
 
 SemaphoreHandle_t w25q128_mux;
+spi_device_handle_t w25q128_spi_handle;
 
 esp_err_t spi_write(spi_device_handle_t handle, spi_transaction_t t, const void *data, size_t len, bool keep_cs)
 {
@@ -157,7 +158,7 @@ int w25q128_is_write_enabled(spi_device_handle_t handle, spi_transaction_t t) {
   }
 
   // print the status register
-  ESP_LOGI(TAG, "WE Status Register: %02X", status_reg);
+  // ESP_LOGI(TAG, "WE Status Register: %02X", status_reg);
 
   return status_reg & W25Q128_WRITE_ENABLE_LATCH_BIT;
 }
@@ -172,7 +173,7 @@ int w25q128_write_is_in_progress(spi_device_handle_t handle, spi_transaction_t t
   }
 
   // print the status register
-  ESP_LOGI(TAG, "WIP Status Register: %02X", status_reg);
+  // ESP_LOGI(TAG, "WIP Status Register: %02X", status_reg);
 
   return status_reg & W25Q128_WRITE_IN_PROGRESS_BIT;
 }
@@ -198,6 +199,18 @@ esp_err_t w25q128_write_enable(spi_device_handle_t handle, spi_transaction_t t) 
   return ESP_OK;
 }
 
+esp_err_t w25q128_request_erase_chip() {
+  ESP_LOGI(TAG, "Requesting chip erase");
+  // Unimplemented until I can figure out how to store the spi_handle
+  esp_err_t ret = w25q128_chip_erase(w25q128_spi_handle);
+  if(ret != ESP_OK) {
+    ESP_LOGE(TAG, "Error erasing chip: %d", ret);
+    return ESP_FAIL;
+  }
+  ESP_LOGI(TAG, "Chip erase complete");
+  return ESP_OK;
+}
+
 esp_err_t w25q128_chip_erase(spi_device_handle_t handle) {
   esp_err_t ret;
 
@@ -219,8 +232,9 @@ esp_err_t w25q128_chip_erase(spi_device_handle_t handle) {
   }
 
   // wait for the write to complete
+  // chip erase can take 40 - 200 seconds
   while(w25q128_write_is_in_progress(handle, t)) {
-    ESP_LOGI(TAG, "Waiting for erase to complete");
+    // ESP_LOGI(TAG, "Waiting for erase to complete");
     // delay for 5 seconds
     vTaskDelay(5000 / portTICK_PERIOD_MS);
   }
@@ -267,7 +281,7 @@ esp_err_t w25q128_read_data(spi_device_handle_t handle, spi_transaction_t t, uin
 esp_err_t w25q128_write_data(spi_device_handle_t handle, spi_transaction_t t, uint32_t addr, const void *data, size_t len) {
   esp_err_t ret;
 
-  ESP_LOGI(TAG, "Waiting for previous write to complete. This may take a while...");
+  // ESP_LOGI(TAG, "Waiting for previous write to complete. This may take a while...");
   while(w25q128_write_is_in_progress(handle, t)) {
     // delay for 10 ms
     vTaskDelay(10 / portTICK_PERIOD_MS);
@@ -312,7 +326,7 @@ esp_err_t w25q128_write_data(spi_device_handle_t handle, spi_transaction_t t, ui
 
   // wait for the write to complete
   while(w25q128_write_is_in_progress(handle, t)) {
-    ESP_LOGI(TAG, "Waiting for write to complete");
+    // ESP_LOGI(TAG, "Waiting for write to complete");
     // delay for 10 ms
     vTaskDelay(10 / portTICK_PERIOD_MS);
   }
@@ -323,7 +337,7 @@ esp_err_t w25q128_write_data(spi_device_handle_t handle, spi_transaction_t t, ui
 esp_err_t w25q128_sector_erase(spi_device_handle_t handle, spi_transaction_t t, uint32_t addr) {
   esp_err_t ret;
 
-  ESP_LOGI(TAG, "Waiting for previous write to complete. This may take a while...");
+  // ESP_LOGI(TAG, "Waiting for previous write to complete. This may take a while...");
   while(w25q128_write_is_in_progress(handle, t)) {
     // delay for 10 ms
     vTaskDelay(10 / portTICK_PERIOD_MS);
@@ -357,7 +371,7 @@ esp_err_t w25q128_sector_erase(spi_device_handle_t handle, spi_transaction_t t, 
 
   // wait for the write to complete
   while(w25q128_write_is_in_progress(handle, t)) {
-    ESP_LOGI(TAG, "Waiting for erase to complete");
+    // ESP_LOGI(TAG, "Waiting for erase to complete");
     // delay for 10 ms
     vTaskDelay(10 / portTICK_PERIOD_MS);
   }
@@ -374,6 +388,8 @@ esp_err_t w25q128_init(spi_device_handle_t handle) {
   }
 
   esp_err_t ret;
+
+  w25q128_spi_handle = handle;
 
   ret = read_unique_id(handle);
   if(ret != ESP_OK) {
