@@ -222,14 +222,13 @@ void app_main(void)
   configure_interrupts();
   
   TaskHandle_t lilfs_task_handle;
-  xTaskCreate(init_littlefs_task, "LittleFSInitTask", 4096, &w25q128_handle, 1, &lilfs_task_handle);
+  xTaskCreate(init_littlefs_task, "LittleFSInitTask", 5120, &w25q128_handle, 1, &lilfs_task_handle);
 
   TaskHandle_t wifi_task_handle;
   xTaskCreate(init_wifi_and_serve, "WiFiInitTask", 4096, NULL, 1, &wifi_task_handle);
 
   struct tm timeinfo;
   while(1) {
-
     esp_err_t ret = ds1307_read_time(&timeinfo);
     if (ret != ESP_OK) {
       ESP_LOGE(TAG, "Error reading time: %d", ret);
