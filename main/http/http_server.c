@@ -2,10 +2,63 @@
 #include "esp_log.h"
 #include "http_server.h"
 #include "lilfs.h"
+#include "ds1307.h"
 
 static const char *TAG = "HTTP";
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
+
+esp_err_t set_time_handler(httpd_req_t *req) {
+  ESP_LOGI(TAG, "POST /time");
+
+  // parse the request to get a tm struct from the ISO 8601 date string
+  size_t content_len = req->content_len;
+  char* content = malloc(content_len + 1);
+  if (!content) {
+    ESP_LOGE(TAG, "Failed to allocate memory for content");
+    httpd_resp_send_500(req);
+    return ESP_FAIL;
+  }
+  int ret = httpd_req_recv(req, content, content_len);
+  if (ret <= 0) {
+    if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+      // Timeout, continue receiving
+      return ESP_OK;
+    }
+    // Error or connection closed, clean up
+    ESP_LOGE(TAG, "Failed constto receive content: %d", ret);
+    free(content);
+    httpd_resp_send_500(req);
+    return ESP_FAIL;
+  }
+  content[content_len] = '\0';
+  ESP_LOGI(TAG, "Received content: %s", content);
+
+  struct tm tm;
+
+  // Parse the date, time, escape double quote at the beginning for reasons
+  int items_read = sscanf(content, "\"%d-%d-%dT%d:%d:%d", &tm.tm_year, &tm.tm_mon, &tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec);
+
+  if (items_read != 6) {
+    ESP_LOGI(TAG, "CONTENT: %s", content);
+    ESP_LOGE(TAG, "Failed to parse time: %d", items_read);
+    char test_content[] = "2024-05-10T14:27:26.631Z";
+    free(content);
+    httpd_resp_send_500(req);
+    return ESP_FAIL;
+  }
+  // Adjust the year and month fields, because strptime expects years since 1900 and months starting from 0
+  tm.tm_year -= 1900;
+  tm.tm_mon -= 1;
+
+  ESP_LOGI(TAG, "Parsed time: %d-%d-%d %d:%d:%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+  ds1307_set_time(&tm);
+  free(content);
+
+  httpd_resp_send(req, NULL, 0);
+  return ESP_OK;
+}
 
 esp_err_t get_files_handler(httpd_req_t *req) {
   ESP_LOGI(TAG, "GET /files");
@@ -75,6 +128,7 @@ esp_err_t get_base_path_handler(httpd_req_t *req)
                           "<input type=\"file\" name=\"file\" accept=\"*/*\">"
                           "<input type=\"submit\" value=\"Submit\">"
                           "<button type=\"button\" id=\"format-fs\">Format littleFS</button>"
+                          "<button type=\"button\" id=\"set-time\">Set RTC</button>"
                         "</form>"
                         "<script>"
                         "document.getElementById('file-upload').addEventListener('submit', function(event) {"
@@ -95,6 +149,23 @@ esp_err_t get_base_path_handler(httpd_req_t *req)
                         "document.getElementById('format-fs').addEventListener('click', function() {"
                         "  fetch('/format', {"
                         "    method: 'POST'"
+                        "  })"
+                        "  .then(response => response.text())"
+                        "  .then(result => {"
+                        "    console.log('Success:', result);"
+                        "  })"
+                        "  .catch(error => {"
+                        "    console.error('Error:', error);"
+                        "  });"
+                        "});"
+                        "document.getElementById('set-time').addEventListener('click', function() {"
+                        "  const now = new Date();"
+                        "  const timezoneOffset = now.getTimezoneOffset();"
+                        "  const offsetMillis = timezoneOffset * 60 * 1000;"
+                        "  const localTime = new Date(now.getTime() - offsetMillis);"
+                        "  fetch('/time', {"
+                        "    method: 'POST',"
+                        "    body: JSON.stringify(localTime),"
                         "  })"
                         "  .then(response => response.text())"
                         "  .then(result => {"
@@ -388,6 +459,11 @@ httpd_uri_t routes[] = {
     .uri       = "/files",
     .method    = HTTP_GET,
     .handler   = get_files_handler,
+    .user_ctx  = NULL
+  }, {
+    .uri       = "/time",
+    .method    = HTTP_POST,
+    .handler   = set_time_handler,
     .user_ctx  = NULL
   }
 };
