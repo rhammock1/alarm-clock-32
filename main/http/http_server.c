@@ -7,6 +7,54 @@ static const char *TAG = "HTTP";
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
+esp_err_t get_files_handler(httpd_req_t *req) {
+  ESP_LOGI(TAG, "GET /files");
+
+  mount_lfs();
+
+  // Get all directories and files from littlefs and respond with a JSON object, where each top-level directory is the key and the value is an array of files
+  lfs_dir_t dir;
+  lfs_open_dir(&dir, "/");
+  struct lfs_info info;
+  char buffer[1024];
+  char response[1024];
+  strcpy(response, "{");
+  while (lfs_read_dir(&dir, &info) > 0) {
+    if (info.type == LFS_TYPE_DIR) {
+      printf("Directory: %s\n", info.name);
+      sprintf(buffer, "\"%s\": [", info.name);
+      strcat(response, buffer);
+      lfs_dir_t subdir;
+      lfs_open_dir(&subdir, info.name);
+      struct lfs_info subinfo;
+      while (lfs_read_dir(&subdir, &subinfo) > 0) {
+        printf("File: %s\n", subinfo.name);
+        sprintf(buffer, "\"%s\",", subinfo.name);
+        strcat(response, buffer);
+      }
+        if (response[strlen(response) - 1] == ',') {
+          response[strlen(response) - 1] = '\0';
+        }
+      lfs_close_dir(&subdir);
+      strcat(response, "],");
+    } else {
+      sprintf(buffer, "\"%s\": [],", info.name);
+      strcat(response, buffer);
+    }
+  }
+  if (response[strlen(response) - 1] == ',') {
+    response[strlen(response) - 1] = '\0';
+  }
+  lfs_close_dir(&dir);
+  strcat(response, "}");
+  printf("Response: %s\n", response);
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_send(req, response, strlen(response));
+
+  unmount_lfs();
+  return ESP_OK;
+}
+
 esp_err_t format_fs_handler(httpd_req_t *req)
 {
   ESP_LOGI(TAG, "POST /format");
@@ -233,6 +281,7 @@ esp_err_t post_file_handler(httpd_req_t *req)
             // Error or connection closed, clean up
             ESP_LOGE(TAG, "Failed to receive file data: %d", ret);
             free(chunk);
+            free(filename);
             httpd_resp_send_500(req);
             lfs_close(&file);
             unmount_lfs();
@@ -335,6 +384,11 @@ httpd_uri_t routes[] = {
     .method    = HTTP_POST,
     .handler   = format_fs_handler,
     .user_ctx  = NULL
+  }, {
+    .uri       = "/files",
+    .method    = HTTP_GET,
+    .handler   = get_files_handler,
+    .user_ctx  = NULL
   }
 };
 
@@ -342,6 +396,7 @@ esp_err_t init_http_server(void)
 {
   httpd_handle_t server = NULL;
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+  config.stack_size = 5120;
 
   // Start the httpd server
   if (httpd_start(&server, &config) != ESP_OK) {

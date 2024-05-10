@@ -141,6 +141,18 @@ int lfs_read(lfs_file_t *file, void *buffer, size_t size) {
   return lfs_file_read(&lfs, file, buffer, size);
 }
 
+int lfs_open_dir(lfs_dir_t *dir, const char *path) {
+  return lfs_dir_open(&lfs, dir, path);
+}
+
+int lfs_read_dir(lfs_dir_t *dir, struct lfs_info *info) {
+  return lfs_dir_read(&lfs, dir, info);
+}
+
+int lfs_close_dir(lfs_dir_t *dir) {
+  return lfs_dir_close(&lfs, dir);
+}
+
 int lfs_read_string(lfs_file_t *file, char *buffer, size_t size) {
   if (size == 0) {
     return LFS_ERR_INVAL;
@@ -221,7 +233,10 @@ esp_err_t init_littlefs(spi_device_handle_t handle) {
 
   ESP_LOGI(TAG, "Read from file: %s", buffer);
 
-  // Create the directory
+  // Create the directory if it doesn't already exist
+  // if(lfs_dir_open(&lfs, &dir, "/uploads")) 
+
+
   int result = lfs_mkdir(&lfs, "/uploads");
 
   if (result == 0) {
