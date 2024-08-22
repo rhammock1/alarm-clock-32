@@ -41,6 +41,31 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
   }
 }
 
+void wifi_init_ap(void) {
+    esp_netif_create_default_wifi_ap();
+
+    wifi_config_t wifi_config = {
+        .ap = {
+            .ssid = "ESP32_AP",
+            .ssid_len = strlen("ESP32_AP"),
+            .password = "12345678",
+            .max_connection = 4,
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK
+        },
+    };
+
+    if (strlen("12345678") == 0) {
+        wifi_config.ap.authmode = WIFI_AUTH_OPEN;
+    }
+
+    esp_wifi_set_mode(WIFI_MODE_AP);
+    esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config);
+    esp_wifi_start();
+
+    ESP_LOGI(TAG, "wifi_init_ap finished. SSID:%s password:%s",
+             "ESP32_AP", "12345678");
+}
+
 void wifi_init_sta(void)
 {
   s_wifi_event_group = xEventGroupCreate();
@@ -105,7 +130,8 @@ void wifi_init_sta(void)
   }
   else if (bits & WIFI_FAIL_BIT)
   {
-    ESP_LOGI(TAG, "Failed to connect to SSID:%s ", WIFI_SSID);
+    ESP_LOGI(TAG, "Failed to connect to SSID:%s, switching to AP mode ", WIFI_SSID);
+    wifi_init_ap();
   }
   else
   {
