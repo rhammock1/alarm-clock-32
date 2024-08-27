@@ -209,40 +209,13 @@ esp_err_t init_littlefs(spi_device_handle_t handle) {
 
   lfs_dir_close(&lfs, &dir);
 
-  // add a file
-  lfs_file_t file;
-  int err = lfs_open(&file, "hello.txt", LFS_O_WRONLY | LFS_O_CREAT);
-  if (err) {
-    ESP_LOGE(TAG, "Error opening hello.txt file: %d", err);
-    return ESP_FAIL;
+  int err = lfs_mkdir(&lfs, "/uploads");
+  if(err != 0 && err != LFS_ERR_EXIST) {
+    ESP_LOGE(TAG, "Error creating uploads directory: %d", err);
   }
-
-  lfs_write(&file, "Hello, LittleFS!", 16);
-
-  lfs_close(&file);
-
-  // read the file
-  char buffer[17];
-  err = lfs_open(&file, "hello.txt", LFS_O_RDONLY);
-  if (err) {
-    ESP_LOGE(TAG, "Error opening for read hello.txt file: %d", err);
-    return ESP_FAIL;
-  }
-  lfs_read_string(&file, buffer, 17);
-  lfs_close(&file);
-
-  ESP_LOGI(TAG, "Read from file: %s", buffer);
-
-  // Create the directory if it doesn't already exist
-  // if(lfs_dir_open(&lfs, &dir, "/uploads")) 
-
-
-  int result = lfs_mkdir(&lfs, "/uploads");
-
-  if (result == 0) {
-      printf("Directory created successfully\n");
-  } else {
-      printf("Failed to create directory, error code: %d\n", result);
+  err = lfs_mkdir(&lfs, "/www");
+  if(err != 0 && err != LFS_ERR_EXIST) {
+    ESP_LOGE(TAG, "Error creating www directory: %d", err);
   }
 
   lfs_dir_open(&lfs, &dir, "/uploads");
@@ -252,7 +225,7 @@ esp_err_t init_littlefs(spi_device_handle_t handle) {
 
   lfs_dir_close(&lfs, &dir);
 
-  // // Clean up
+  // Clean up
   unmount_lfs();
 
   return ESP_OK;
