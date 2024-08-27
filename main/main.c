@@ -10,6 +10,7 @@
 #include "wifi.h"
 #include "lilfs.h"
 #include "http_server.h"
+#include <audio.h>
 
 static const char *TAG = "ALARM-CLOCK";
 
@@ -23,14 +24,12 @@ void vcnl4010_interrupt_handler(void *arg)
 {
   while (1)
   {
-    ESP_LOGI(TAG, "IN HANDLER TASK");
     // Wait for the ISR to signal us
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
     // Now we can safely call the non-IRAM-safe functions
     uint8_t interrupt_status;
     vcnl4010_readInterruptStatus(&interrupt_status);
-    ESP_LOGI(TAG, "Interrupt status: %d", interrupt_status);
 
     if(interrupt_status & 0x01)
     {
@@ -39,8 +38,6 @@ void vcnl4010_interrupt_handler(void *arg)
       // Must write ones in each bit to clear the interrupt
       vcnl4010_writeInterruptStatus(0x01);
     }
-
-    ESP_LOGI(TAG, "Interrupt status: %d", interrupt_status);
   }
 }
 
@@ -150,6 +147,13 @@ void init_drivers(spi_device_handle_t w25q128_handle) {
     error_blink_task(SOURCE_I2C);
   }
   ESP_LOGI(TAG, "W25Q128 initialized successfully");
+
+  ret = audio_init();
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "Error initializing audio: %d", ret);
+    error_blink_task(SOURCE_I2C);
+  }
 }
 
 void init_wifi_and_serve(void *arg) {

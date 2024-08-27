@@ -3,6 +3,7 @@
 #include "http_server.h"
 #include "lilfs.h"
 #include "ds1307.h"
+#include "audio.h"
 
 static const char *TAG = "HTTP";
 
@@ -55,6 +56,20 @@ esp_err_t set_time_handler(httpd_req_t *req) {
 
   ds1307_set_time(&tm);
   free(content);
+
+  httpd_resp_send(req, NULL, 0);
+  return ESP_OK;
+}
+
+esp_err_t play_sound_handler(httpd_req_t *req) {
+  ESP_LOGI(TAG, "GET /sound");
+
+  esp_err_t ret = audio_test();
+  if(ret != ESP_OK) {
+    ESP_LOGE(TAG, "Error playing sound: %d", ret);
+    httpd_resp_send_500(req);
+    return ESP_FAIL;
+  }
 
   httpd_resp_send(req, NULL, 0);
   return ESP_OK;
@@ -129,6 +144,8 @@ esp_err_t get_base_path_handler(httpd_req_t *req)
                           "<input type=\"submit\" value=\"Submit\">"
                           "<button type=\"button\" id=\"format-fs\">Format littleFS</button>"
                           "<button type=\"button\" id=\"set-time\">Set RTC</button>"
+                          "<button type=\"button\" id=\"get-files\">Get Files</button>"
+                          "<button type=\"button\" id=\"play-sound\">Play Sound</button>"
                         "</form>"
                         "<script>"
                         "document.getElementById('file-upload').addEventListener('submit', function(event) {"
@@ -174,6 +191,26 @@ esp_err_t get_base_path_handler(httpd_req_t *req)
                         "  .catch(error => {"
                         "    console.error('Error:', error);"
                         "  });"
+                        "});"
+                        "document.getElementById('get-files').addEventListener('click', function() {"
+                        "  fetch('/files')"
+                        "    .then(response => response.json())"
+                        "    .then(result => {"
+                        "      console.log('Success:', result);"
+                        "    })"
+                        "    .catch(error => {"
+                        "      console.error('Error:', error);"
+                        "    });"
+                        "});"
+                        "document.getElementById('play-sound').addEventListener('click', function() {"
+                        "  fetch('/sound')"
+                        "    .then(response => response.text())"
+                        "    .then(result => {"
+                        "      console.log('Success:', result);"
+                        "    })"
+                        "    .catch(error => {"
+                        "      console.error('Error:', error);"
+                        "    });"
                         "});"
                         "</script>";
   httpd_resp_set_type(req, "text/html");
@@ -464,6 +501,11 @@ httpd_uri_t routes[] = {
     .uri       = "/time",
     .method    = HTTP_POST,
     .handler   = set_time_handler,
+    .user_ctx  = NULL
+  }, {
+    .uri       = "/sound",
+    .method    = HTTP_GET,
+    .handler   = play_sound_handler,
     .user_ctx  = NULL
   }
 };
