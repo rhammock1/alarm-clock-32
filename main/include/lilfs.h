@@ -10,6 +10,7 @@ int lfs_read(lfs_file_t *file, void *buffer, size_t size);
 int lfs_open_dir(lfs_dir_t *dir, const char *path);
 int lfs_read_dir(lfs_dir_t *dir, struct lfs_info *info);
 int lfs_close_dir(lfs_dir_t *dir);
+int lfs_file_exists(const char *path);
 esp_err_t mount_lfs();
 esp_err_t unmount_lfs();
 esp_err_t format_lfs();

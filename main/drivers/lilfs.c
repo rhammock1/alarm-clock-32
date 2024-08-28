@@ -92,9 +92,22 @@ int w25q128_lfs_sync(const struct lfs_config *c) {
 }
 
 esp_err_t format_lfs() {
-  ESP_LOGE(TAG, "Attempting format");
+  ESP_LOGW(TAG, "Attempting format");
   // If the mount failed, format the file system and try again
   lfs_format(&lfs, &w25q128_cfg);
+
+  mount_lfs();
+
+  int err = lfs_mkdir(&lfs, "/uploads");
+  if(err != 0 && err != LFS_ERR_EXIST) {
+    ESP_LOGE(TAG, "Error creating uploads directory: %d", err);
+  }
+  err = lfs_mkdir(&lfs, "/www");
+  if(err != 0 && err != LFS_ERR_EXIST) {
+    ESP_LOGE(TAG, "Error creating www directory: %d", err);
+  }
+
+  unmount_lfs();
   return ESP_OK;
 }
 
@@ -151,6 +164,16 @@ int lfs_read_dir(lfs_dir_t *dir, struct lfs_info *info) {
 
 int lfs_close_dir(lfs_dir_t *dir) {
   return lfs_dir_close(&lfs, dir);
+}
+
+int lfs_file_exists(const char *path) {
+  lfs_file_t file;
+  int err = lfs_open(&file, path, LFS_O_RDONLY);
+  if(err) {
+    return 0;
+  }
+  lfs_close(&file);
+  return 1;
 }
 
 int lfs_read_string(lfs_file_t *file, char *buffer, size_t size) {
