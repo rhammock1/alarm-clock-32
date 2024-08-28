@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ESP32 Alarm Clock</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.ico">
+  </head>
+  <body>
+    <h1>ESP32 Alarm Clock</h1>
+    <form id="file-upload">
+      <input id="files-input" type="file" multiple name="files" accept="*/*">
+      <input id="overwrite_html" name="overwrite_html" type="checkbox"> Save to /www/ </input>
+      <input type="submit" value="Submit">
+      <button type="button" id="format-fs">Format littleFS</button>
+      <button type="button" id="set-time">Set RTC</button>
+      <button type="button" id="get-files">Get Files</button>
+      <button type="button" id="play-sound">Play Sound</button>
+    </form>
+    <script src="script.js"></script>
+  </body>
+</html>
